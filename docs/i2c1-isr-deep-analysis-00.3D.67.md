@@ -109,7 +109,7 @@ uint8_t crc8_07_update(uint8_t crc, uint8_t data)
 
 ```cpp
 uint8_t pmbusPecUpdate(uint8_t crc, uint8_t data) {
-    uint8_t x = (uint8_t)(crc ^ data);
+    crc ^= data;
     for (uint8_t i = 0; i < 8; ++i) {
         crc = (crc & 0x80)
             ? (uint8_t)((crc << 1) ^ 0x07)
