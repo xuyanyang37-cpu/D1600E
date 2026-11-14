@@ -161,6 +161,19 @@ READ_IOUT 和温度读函数采用相似的两字节返回框架。这里的读�
 
 这意味着 READ_FAN_SPEED_1 并不是简单读取一个固定 RAM 值；PAGE=0xFF 路径实际依赖 IC1 捕获的风扇转速。
 
+### FAN_CONFIG_1_2 的实际返回值
+
+读处理函数 `0x001E62` 不是动态读取 RAM，而是直接返回单字节 `0x90`。按 PMBus FAN_CONFIG_1_2 位定义：
+
+- bit 7 = 1：Fan 1 已安装；
+- bit 6 = 0：Fan 1 命令模式为 PWM 占空比，不是 RPM；
+- bits 5:4 = 01：Fan 1 每转 2 个 tach 脉冲；
+- bit 3 = 0：Fan 2 未安装。
+
+这也与固件使用 IC1 捕获风扇 tach 周期相吻合。PMBus 规范规定 bits 5:4 的 `01b` 表示每转 2 个 tach 脉冲；bit 6 清零表示 Fan 1 以占空比控制。<https://pmbus.org/wp-content/uploads/2022/01/PMBus-Specification-Rev-1-3-1-Part-II-20150313.pdf>
+
+因此标准 `FAN_COMMAND_1 0x3B` 应按两字节占空比命令理解，范围为 0–100%，而不是直接写 RPM 数字。读回 `READ_FAN_SPEED_1 0x90` 则是 RPM 测量值；其数据编码格式仍要结合固件的 `0x0033D6` 继续确认。
+
 ## 5. FAN_COMMAND_1 控制路径
 
 - 读命令表：`0x3B -> 0x1E4E`。处理函数读取 `f15b=0x0733`（实际数据空间字节地址 `0x0E66`），再调用 `0x0033D6` 形成 16-bit 响应。
