@@ -185,15 +185,15 @@ READ_IOUT 和温度读函数采用相似的两字节返回框架。这里的读�
 
 ## 6. 与用户实测命令的对应关系
 
-- `READ_VOUT 0x8B)、`READ_IOUT 0x8C)、`READ_TEMPERATURE_1..3 0x8D..0x8F)、`READ_FAN_SPEED_1 0x90` 均在读命令表中有明确处理函数。
-- `STATUS_WORD 0x79)、`STATUS_CML 0x7E` 也有明确处理函数。
-- `VOUT_MODE 0x20)、`VOUT_COMMAND 0x21)、`VOUT_MAX 0x24` 没有出现在当前恢复出的 85 项读表和 43 项写/事务表中。这与用户实测读回 `0xFF/0xFFFF` 的现象相符，提示这些命令可能未实现或走默认异常响应；仍需检查通用 fallback 路径后才能定论。
+- `READ_VOUT 0x8B`、`READ_IOUT 0x8C`、`READ_TEMPERATURE_1..3 0x8D..0x8F`、`READ_FAN_SPEED_1 0x90` 均在读命令表中有明确处理函数。
+- `STATUS_WORD 0x79`、`STATUS_CML 0x7E` 也有明确处理函数。
+- `VOUT_MODE 0x20`、`VOUT_COMMAND 0x21`、`VOUT_MAX 0x24` 没有出现在当前恢复出的 85 项读表和 43 项写/事务表中。这与用户实测读回 `0xFF/0xFFFF` 的现象相符，提示这些命令可能未实现或走默认异常响应；仍需检查通用 fallback 路径后才能定论。
 - 厂商命令 E1/E2/E3 已确认存在于读表和写表；具体语义尚未确认。
 
 ## 7. 下一步
 
 1. 继续追踪 `0x0033D6`，确认 LINEAR11 打包规则和不同测量通道的指数/比例。
-2. 追踪 `0x006140)、`0x006676)、`0x0066B8) 以及 FAN_COMMAND_1 写入的 `f15b=0x0732/0x0733)，确认风扇控制算法和 PWM3 输出映射。
+2. 追踪 `0x006140`、`0x006676`、`0x0066B8` 以及 FAN_COMMAND_1 写入的 `f15b=0x0732/0x0733`，确认风扇控制算法和 PWM3 输出映射。
 3. 反向分析厂商命令 E1/E2/E3 的读写处理函数，解释用户之前看到的变化。
 4. 追踪 I2C1 CRC-8 状态初始化、地址字节覆盖、PEC 接收比较和发送追加，最终确认是否完整实现 SMBus PEC。
 5. 搜索并验证 READ_VOUT/READ_IOUT 上游 ADC 原始采样、比例常数和物理单位。
