@@ -120,3 +120,30 @@ Do not confuse the program-space vector PC `0x0034` with the data-space I2C1 SFR
    - Section 7.4: slave receive and RBF/I2COV behavior.
    - Section 7.5: slave transmit behavior.
    - SI2CxIF event list and PMBus-related AHEN/DHEN discussion.
+
+
+## 8. Partial instruction decode at the ISR entry
+
+The raw instruction words previously recorded at `0x006FA2` can now be partially decoded against Microchip's dsPIC33F instruction encodings:
+
+| PC | Word | Decoded instruction | Confidence |
+|---|---:|---|---|
+| `0x006FA2` | `F80036` | `PUSH 0x0036` = `PUSH RCOUNT` | High |
+| `0x006FA4` | `BE9F80` | `MOV.D W0, [W15++]` | High |
+| `0x006FA6` | `BE9F82` | `MOV.D W2, [W15++]` | High |
+| `0x006FA8` | `BE9F84` | `MOV.D W4, [W15++]` | High |
+| `0x006FAA` | `BE9F86` | `MOV.D W6, [W15++]` | High |
+| `0x006FAC` | `781F88` | `MOV W8, [W15++]` | High (matching dsPIC33 disassembly example) |
+| `0x006FAE` | `801000` | Not yet independently verified | Open |
+| `0x006FB0` | `784100` | Not yet independently verified | Open |
+
+The first six instructions are a compiler-style ISR prologue: it preserves RCOUNT and W0–W8 (W0/W1, W2/W3, W4/W5, W6/W7 as double words, plus W8) on the stack. This is register preservation, not evidence of PMBus command handling by itself. The next instruction words must be decoded before interpreting the ISR body.
+
+Microchip's Programmer's Reference Manual defines the PUSH file-register encoding as `1111 1000 ffff ffff ffff fff0`; with `f=0x0036`, `F80036` is `PUSH 0x0036`. The device data/core register map places RCOUNT at data-space address `0x0036`. The manual also defines `MOV.D Wns,[W15++]` as a double-word push-equivalent operation. A published dsPIC33 disassembly example independently shows `F80036` as `PUSH RCOUNT`, `BE9F80` as `MOV.D W0,[W15++]`, and `781F88` as `MOV W8,[W15++]`.
+
+This partial decode increases confidence that `0x006FA2` is a genuine code entry and that the four-byte-slot extraction was interpreted with the correct instruction alignment. It does **not** yet identify the I2C status tests, RCV/TRN accesses, PEC routine, or command dispatch.
+
+Reference:
+- Microchip 16-Bit MCU and DSC Programmer's Reference Manual DS70000157G: https://ww1.microchip.com/downloads/en/DeviceDoc/70000157g.pdf
+  - PUSH f encoding and MOV.D descriptions.
+- dsPIC33F assembly example with matching prologue opcodes: https://www.todopic.com.ar/foros/index.php?topic=45240.0
